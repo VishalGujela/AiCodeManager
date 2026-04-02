@@ -1,0 +1,34 @@
+# Local / single-server deploy: docker compose up --build -d
+# BIND_IP / HOST_PORT: use scripts/dcompose (sets defaults), or:
+#   docker compose --env-file compose.env -f docker-compose.yml up -d
+#
+# Use 3.3 for old docker-compose on servers; `start_period` needs 3.4+ (omitted below).
+version: "3.3"
+
+services:
+  api:
+    build: .
+    ports:
+      # v1 docker-compose does not support ${VAR:-default}; set vars via dcompose or compose.env
+      - "${BIND_IP}:${HOST_PORT}:8000"
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+      LOG_FORMAT: json
+      LOG_LEVEL: INFO
+      # Optional: mount Docker socket below and set DOCKER_ENABLED=true for sandboxed tools
+      DOCKER_ENABLED: "false"
+    volumes:
+      # Persist sandbox + allow large test outputs (optional bind)
+      - api-sandbox:/app/sandbox
+      # Uncomment on Linux to run execute/analyse/tests inside Docker from the API container:
+      # - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  api-sandbox:

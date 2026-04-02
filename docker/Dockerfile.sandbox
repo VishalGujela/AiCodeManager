@@ -1,0 +1,13 @@
+# Pre-baked tools so containers start without pip at runtime (faster + allows --network none).
+FROM python:3.10-slim
+
+RUN pip install --no-cache-dir \
+    pytest>=7.4.0 \
+    pytest-cov>=4.1.0 \
+    pytest-asyncio>=0.23.0 \
+    flake8>=6.0.0 \
+    pylint>=3.0.0 \
+    mypy>=1.8.0 \
+    httpx>=0.26.0
+
+WORKDIR /workspace

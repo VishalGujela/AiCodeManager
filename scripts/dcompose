@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Runs Compose using either `docker compose` (v2 plugin) or `docker-compose` (v1).
+# Use this if `docker compose` is not installed or fails with strange errors.
+#
+# Examples (from repo root):
+#   BIND_IP=0.0.0.0 HOST_PORT=9991 ./scripts/dcompose up --build -d
+#   sudo env BIND_IP=0.0.0.0 HOST_PORT=9991 ./scripts/dcompose up --build -d
+#
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+COMPOSE_FILE="$ROOT/docker-compose.yml"
+
+# docker-compose v1 rejects ${VAR:-default} in YAML; export plain values here.
+export BIND_IP="${BIND_IP:-0.0.0.0}"
+export HOST_PORT="${HOST_PORT:-8000}"
+
+if docker compose version >/dev/null 2>&1; then
+  exec docker compose -f "$COMPOSE_FILE" "$@"
+elif command -v docker-compose >/dev/null 2>&1 && docker-compose version >/dev/null 2>&1; then
+  exec docker-compose -f "$COMPOSE_FILE" "$@"
+else
+  echo "Neither 'docker compose' (Compose v2 plugin) nor 'docker-compose' (v1) is available." >&2
+  echo "Install one of:" >&2
+  echo "  Debian/Ubuntu: sudo apt-get install docker-compose-plugin" >&2
+  echo "  Or:            sudo apt-get install docker-compose" >&2
+  echo "  Docs:          https://docs.docker.com/compose/install/linux/" >&2
+  exit 1
+fi
